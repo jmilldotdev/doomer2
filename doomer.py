@@ -30,7 +30,7 @@ class DoomerCog(commands.Cog):
                 completion = await self.get_completion_with_chat_context(ctx, 10)
                 await ctx.channel.send(completion)
 
-    @commands.slash_command(guild_ids=[config.TEST_GUILD_ID])
+    @commands.slash_command()
     async def respond(
         self,
         ctx: commands.Context,
@@ -45,7 +45,7 @@ class DoomerCog(commands.Cog):
         completion = await self.get_completion_with_chat_context(ctx, n_messages)
         await ctx.respond(completion)
 
-    @commands.slash_command(guild_ids=[config.TEST_GUILD_ID])
+    @commands.slash_command()
     async def complete(
         self,
         ctx,
