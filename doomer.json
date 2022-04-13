@@ -1,0 +1,5 @@
+{
+  "name": "Doomer",
+  "token_env": "BOT_TOKEN",
+  "command_prefix": ">"
+}
