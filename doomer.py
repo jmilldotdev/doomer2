@@ -1,3 +1,4 @@
+import logging
 from random import random
 import discord
 import re
@@ -19,7 +20,7 @@ class DoomerCog(commands.Cog):
         self.bot = bot
         self.language_model = OpenAIGPT3LanguageModel()
         self.response_thresh = 0.01
-        self.prohibited_words = base64.b64decode(open("filtered_words.txt", "r").read()).decode('utf-8').split("\r\n")
+        self.prohibited_words = self.read_prohibited_words(self, "filtered_words.txt")
 
     @commands.Cog.listener("on_message")
     async def on_message(self, message: discord.Message) -> None:
@@ -111,6 +112,14 @@ class DoomerCog(commands.Cog):
         )
         message_content = message_content.strip()
         return message_content
+
+    def read_prohibited_words(self, filename: str) -> list[str]:
+        try:
+            return base64.b64decode(open(filename, "r").read()).decode('utf-8').split("\r\n")
+        except OSError:
+            logging.error(f"Unable to open file: {filename}")
+            return ['']
+
 
 
 def setup(bot: commands.Bot) -> None:
