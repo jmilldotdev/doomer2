@@ -5,6 +5,7 @@ from marsbots_core import config
 from marsbots_core.models import ChatMessage
 from marsbots_core.programs.lm import complete_text
 from marsbots_core.resources.discord_utils import (
+    filter_application_command_messages,
     get_discord_messages,
     is_mentioned,
     replace_mentions_with_usernames,
@@ -15,7 +16,10 @@ from marsbots_core.resources.language_models import OpenAIGPT3LanguageModel
 class DoomerCog(commands.Cog):
     def __init__(self, bot: commands.bot) -> None:
         self.bot = bot
-        self.language_model = OpenAIGPT3LanguageModel()
+        self.language_model = OpenAIGPT3LanguageModel(
+            frequency_penalty=1.0,
+            presence_penalty=0.2,
+        )
         self.response_thresh = 0.01
 
     @commands.Cog.listener("on_message")
@@ -81,6 +85,11 @@ class DoomerCog(commands.Cog):
 
     async def format_prompt(self, ctx, n_messages):
         last_messages = await get_discord_messages(ctx.channel, n_messages)
+        last_messages = (
+            last_messages[:-1]
+            if last_messages[-1].type == discord.MessageType.application_command
+            else last_messages
+        )
         prompt = "\n".join(
             [
                 str(
@@ -93,7 +102,7 @@ class DoomerCog(commands.Cog):
             ]
         )
         prompt += "\n"
-        prompt += str(ChatMessage("", self.bot.user.display_name))
+        prompt += f"**[{self.bot.user.display_name}]**:"
         return prompt
 
     def message_preprocessor(self, message: discord.Message) -> str:
