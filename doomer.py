@@ -1,5 +1,8 @@
+import logging
 from random import random
 import discord
+import re
+import base64
 from discord.ext import commands
 from marsbots_core import config
 from marsbots_core.models import ChatMessage
@@ -21,6 +24,7 @@ class DoomerCog(commands.Cog):
             presence_penalty=0.2,
         )
         self.response_thresh = 0.01
+        self.prohibited_words = self.read_prohibited_words(self, "filtered_words.txt")
 
     @commands.Cog.listener("on_message")
     async def on_message(self, message: discord.Message) -> None:
@@ -69,7 +73,8 @@ class DoomerCog(commands.Cog):
         completion = await complete_text(
             self.language_model, prompt, max_tokens=max_tokens
         )
-        formatted = f"**{prompt}**{completion}"
+        completion_filtered = await self.filter_completion(self, completion)
+        formatted = f"**{prompt}**{completion_filtered}"
         await ctx.respond(formatted)
 
     def should_act(self) -> bool:
@@ -81,7 +86,12 @@ class DoomerCog(commands.Cog):
         completion = await complete_text(
             self.language_model, prompt, max_tokens=80, stop=["**[", "\n\n"]
         )
-        return completion
+        completion_filtered = await self.filter_completion(self, completion)
+        return completion_filtered
+
+    async def filter_completion(self, completion: str) -> str:
+        regex = re.compile('|'.join(map(re.escape, self.prohibited_words)))
+        return regex.sub("####", completion)
 
     async def format_prompt(self, ctx, n_messages):
         last_messages = await get_discord_messages(ctx.channel, n_messages)
@@ -111,6 +121,14 @@ class DoomerCog(commands.Cog):
         )
         message_content = message_content.strip()
         return message_content
+
+    def read_prohibited_words(self, filename: str) -> list[str]:
+        try:
+            return base64.b64decode(open(filename, "r").read()).decode('utf-8').split("\r\n")
+        except OSError:
+            logging.error(f"Unable to open file: {filename}")
+            return ['']
+
 
 
 def setup(bot: commands.Bot) -> None:
