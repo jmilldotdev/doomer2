@@ -11,6 +11,7 @@ from marsbots_core.models import ChatMessage
 from marsbots_core.programs.lm import complete_text
 from marsbots_core.resources.discord_utils import (
     get_discord_messages,
+    get_nick,
     is_mentioned,
     replace_mentions_with_usernames,
     wait_for_user_reply,
@@ -134,7 +135,7 @@ class DoomerCog(commands.Cog):
                 str(
                     ChatMessage(
                         self.message_preprocessor(m),
-                        m.author.display_name,
+                        get_nick(m.author),
                         deliniator_left=f"**[{m.created_at.strftime('%I:%M:%S %p')} ",
                     )
                 ).strip()
