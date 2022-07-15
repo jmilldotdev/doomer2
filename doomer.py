@@ -24,6 +24,7 @@ class DoomerSettings:
     engine: str = "davinci"
     temperature: float = 1.0
     presence_penalty: float = 0.5
+    frequency_penalty: float = 0.2
     autoreply_probability: float = 0.01
 
 
