@@ -1,12 +1,13 @@
+const WORKDIR = "/marsbots";
+
 module.exports = {
   apps: [
     {
       name: "doomer",
-      script: "../../bot.py",
+      script: `${WORKDIR}/bot.py`,
       interpreter: "python",
-      args: "./doomer.json --cog-path=bots.doomer2.doomer --dotenv-path=.env",
-      watch: ["."],
-      ignore_watch: ["__pycache__", "*.pyc", "./doomer_settings.json"],
+      args: `${WORKDIR}/bots/doomer2/doomer.json --cog-path=bots.doomer2.doomer --dotenv-path=${WORKDIR}/bots/doomer2/.env`,
+      watch: [`${WORKDIR}/bots/doomer`],
       watch_delay: 1000,
     },
   ],

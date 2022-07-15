@@ -1,29 +1,29 @@
 from dataclasses import dataclass
-from datetime import timedelta
 import logging
 from pathlib import Path
-from random import random, randint
+from random import random
 import discord
 import re
 import base64
 from discord.ext import commands
-from marsbots_core.models import ChatMessage
-from marsbots_core.programs.lm import complete_text
-from marsbots_core.resources.discord_utils import (
+from marsbots.models import ChatMessage
+from marsbots.language_models import complete_text
+from marsbots.discord_utils import (
     get_discord_messages,
     get_nick,
     is_mentioned,
     replace_mentions_with_usernames,
     wait_for_user_reply,
 )
-from marsbots_core.resources.language_models import OpenAIGPT3LanguageModel
-from marsbots_core.resources.settings_manager import LocalSettingsManager
+from marsbots.language_models import OpenAIGPT3LanguageModel
+from marsbots.settings_manager import LocalSettingsManager
 
 
 @dataclass
 class DoomerSettings:
-    frequency_penalty: float = 1.0
-    presence_penalty: float = 0.2
+    engine: str = "davinci"
+    temperature: float = 1.0
+    presence_penalty: float = 0.5
     autoreply_probability: float = 0.01
 
 
@@ -85,7 +85,7 @@ class DoomerCog(commands.Cog):
         language_model = self.get_language_model(ctx)
         completion = await complete_text(language_model, prompt, max_tokens=max_tokens)
         # completion_filtered = await self.filter_completion(completion)
-        formatted = f"**{prompt}**{completion}"
+        formatted = f"{prompt}{completion}"
         await ctx.respond(formatted)
 
     def should_act(self, ctx) -> bool:
@@ -100,7 +100,7 @@ class DoomerCog(commands.Cog):
         prompt = await self.format_prompt(ctx, n_messages)
         language_model = self.get_language_model(ctx)
         completion = await complete_text(
-            language_model, prompt, max_tokens=80, stop=["**[", "\n\n"]
+            language_model, prompt, max_tokens=300, stop=["**["]
         )
         return completion
         # completion_filtered = await self.filter_completion(self, completion)
@@ -119,6 +119,9 @@ class DoomerCog(commands.Cog):
             channel_id, guild_id, "presence_penalty"
         )
         return OpenAIGPT3LanguageModel(
+            engine=self.settings_manager.get_channel_setting(
+                channel_id, guild_id, "engine"
+            ),
             frequency_penalty=frequency_penalty,
             presence_penalty=presence_penalty,
         )
@@ -142,17 +145,14 @@ class DoomerCog(commands.Cog):
                 for m in last_messages
             ]
         )
-        n_seconds = randint(5, 120)
-        new_msg_time = (
-            last_messages[-1].created_at + timedelta(seconds=n_seconds)
-        ).strftime("%I:%M:%S %p")
         prompt += "\n"
-        prompt += f"**[{new_msg_time} {self.bot.user.display_name}]**:"
+        prompt += f"**[{self.bot.user.display_name}]**:"
+        print(prompt)
         return prompt
 
     def message_preprocessor(self, message: discord.Message) -> str:
         message_content = replace_mentions_with_usernames(
-            message.content, message.mentions
+            message.content, message.mentions, prefix="@"
         )
         message_content = message_content.strip()
         return message_content
@@ -168,7 +168,7 @@ class DoomerCog(commands.Cog):
             logging.error(f"Unable to open file: {filename}")
             return [""]
 
-    ### SETTINGS
+    # SETTINGS
 
     @commands.slash_command()
     async def update_settings(

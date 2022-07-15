@@ -1,5 +1,6 @@
 {
   "name": "Doomer",
   "token_env": "BOT_TOKEN",
-  "command_prefix": ">"
+  "command_prefix": ">",
+  "intents": ["members"]
 }
